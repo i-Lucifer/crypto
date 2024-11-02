@@ -4,7 +4,6 @@ import (
 	"crypto/ecdsa"
 	"encoding/hex"
 	"fmt"
-	"log"
 	"math/big"
 	"strings"
 
@@ -172,19 +171,23 @@ func GetEthAddressByBytePublicKey(publicKey []byte) (address string, err error) 
 
 func GetPublicKeyBySign(msgHash, signature []byte) (sigPublicKey []byte, err error) {
 	if len(signature) != SignatureLen {
-		log.Fatal("invalid signature 1")
+		err = fmt.Errorf("invalid signature")
 		return
 	}
 	// R S V -> V R S
 
-	sig := signature[64] + 27
+	sig := signature[64]
+	if sig == 0 || sig == 1 {
+		sig += 27
+	}
 	var sigs Bytes
 	sigs = append(sigs, sig)
 	sigs = append(sigs, signature[0:64]...)
 
 	publicKey, _, err := secp_ecdsa.RecoverCompact(sigs, msgHash)
 	if err != nil {
-		log.Fatal("invalid signature 2")
+		err = fmt.Errorf("invalid signature")
+		return
 	}
 
 	sigPublicKey = publicKey.SerializeUncompressed()
